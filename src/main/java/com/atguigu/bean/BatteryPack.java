@@ -1,12 +1,16 @@
 package com.atguigu.bean;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
 @Data
+@AllArgsConstructor
+@NoArgsConstructor
 public class BatteryPack {
     private Integer id;
     private List<Battery> batteries;
@@ -44,12 +48,12 @@ public class BatteryPack {
     @SuppressWarnings("OptionalGetWithoutIsPresent")
     private void renewStatus() {
         this.voltage = batteries.stream().map(Battery::getVoltage).reduce(Double::sum).get()/ batteries.size();
-        this.electricCurrent = batteries.stream().map(Battery::getElectricCurrent).reduce(Double::sum).get();
+        this.electricCurrent = batteries.stream().map(Battery::getCurrent).reduce(Double::sum).get();
         this.temperature = batteries.stream().map(Battery::getTemperature).reduce(Double::sum).get() / batteries.size();
         this.soc = batteries.stream().map(Battery::getSoc).reduce(Double::sum).get() / batteries.size();
 
-        Battery maxCurrent = batteries.stream().max(Comparator.comparing(Battery::getElectricCurrent)).get();
-        this.maxElectricCurrent = maxCurrent.getElectricCurrent();
+        Battery maxCurrent = batteries.stream().max(Comparator.comparing(Battery::getCurrent)).get();
+        this.maxElectricCurrent = maxCurrent.getCurrent();
         this.maxElectricCurrentId = maxCurrent.getId();
 
         Battery maxVoltage = batteries.stream().max(Comparator.comparing(Battery::getVoltage)).get();
@@ -60,8 +64,8 @@ public class BatteryPack {
         this.maxTemperature = maxTemperature.getTemperature();
         this.maxTemperatureId = maxTemperature.getId();
 
-        Battery minCurrent = batteries.stream().min(Comparator.comparing(Battery::getElectricCurrent)).get();
-        this.minElectricCurrent = minCurrent.getElectricCurrent();
+        Battery minCurrent = batteries.stream().min(Comparator.comparing(Battery::getCurrent)).get();
+        this.minElectricCurrent = minCurrent.getCurrent();
         this.minElectricCurrentId = minCurrent.getId();
 
         Battery minVoltage = batteries.stream().min(Comparator.comparing(Battery::getVoltage)).get();

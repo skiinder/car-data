@@ -2,11 +2,15 @@ package com.atguigu.bean;
 
 import cn.hutool.core.util.RandomUtil;
 import com.atguigu.data.MotorData;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.util.List;
 
 @Data
+@AllArgsConstructor
+@NoArgsConstructor
 public class Motor {
     public Integer id;
     public Status status;

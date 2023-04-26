@@ -4,13 +4,16 @@ import cn.hutool.core.util.RandomUtil;
 import com.atguigu.data.MotorData;
 import com.atguigu.data.RealtimeData;
 import com.atguigu.util.Util;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
-import java.sql.Timestamp;
 import java.util.*;
 import java.util.stream.Collectors;
 
 @Data
+@AllArgsConstructor
+@NoArgsConstructor
 public class Car {
     private String vin;
     private CarStatus status;
@@ -29,7 +32,7 @@ public class Car {
         status = CarStatus.RUNNING;
         renewStatus();
         velocity = RandomUtil.randomInt(400, 1200);
-        mileage += (int) (velocity * seconds / 360.0);
+        mileage += (int) (velocity * seconds / 36000.0);
         switch (chargingStatus) {
             case RUNNING_CHARGING:
                 batteryPackList.forEach(batteryPack -> batteryPack.charge(seconds));

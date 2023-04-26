@@ -1,9 +1,13 @@
 package com.atguigu.bean;
 
 import cn.hutool.core.util.RandomUtil;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
+@AllArgsConstructor
+@NoArgsConstructor
 public class Engine {
 
     private Status status;

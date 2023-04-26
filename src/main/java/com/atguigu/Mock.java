@@ -43,6 +43,35 @@ public class Mock {
         getLogger();
         getCars();
         writeData();
+        saveCarState();
+    }
+
+    private void saveCarState() throws RuntimeException {
+        Properties properties = new Properties();
+        properties.setProperty("user", jdbcUsername);
+        properties.setProperty("password", jdbcPassword);
+        properties.setProperty("useSSL", "false");
+        properties.setProperty("rewriteBatchedStatements", "true");
+        properties.setProperty("allowPublicKeyRetrieval", "true");
+        try (Connection connection = DriverManager.getConnection(jdbcUrl, properties)) {
+            connection.setAutoCommit(false);
+            ObjectMapper objectMapper = new ObjectMapper();
+            PreparedStatement carStatement = connection.prepareStatement("insert into car_state values (?,?) on duplicate key update car=?");
+            for (Car car : cars) {
+                String carValue = objectMapper.writeValueAsString(car);
+                carStatement.setString(1, car.getVin());
+                carStatement.setString(2, carValue);
+                carStatement.setString(3, carValue);
+                carStatement.addBatch();
+            }
+            carStatement.executeBatch();
+            carStatement.close();
+
+
+            connection.commit();
+        } catch (SQLException | JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private void getCars() {
@@ -56,8 +85,8 @@ public class Mock {
             connection.setAutoCommit(false);
             // 检查维度表是否存在
             DatabaseMetaData metaData = connection.getMetaData();
-            ResultSet tables = metaData.getTables(null, null, "car_info", new String[]{"TABLE"});
-            if (!tables.first()) {
+            ResultSet dim = metaData.getTables(null, null, "car_info", new String[]{"TABLE"});
+            if (!dim.first()) {
                 Statement statement = connection.createStatement();
                 statement.execute("create table car_info(" +
                         "id varchar(20) primary key," +
@@ -75,6 +104,8 @@ public class Mock {
                         ")");
                 statement.close();
             }
+
+            // 向维度表中插入数据
             PreparedStatement preparedStatement = connection.prepareStatement("select id from car_info");
             ResultSet resultSet = preparedStatement.executeQuery();
             if (!resultSet.next()) {
@@ -99,18 +130,41 @@ public class Mock {
                     line = bufferedReader.readLine();
                 }
                 insert.executeBatch();
-                connection.commit();
                 insert.close();
             }
             resultSet.close();
-            resultSet = preparedStatement.executeQuery();
+
+            // 检查状态表
+            ResultSet state = metaData.getTables(null, null, "car_state", new String[]{"TABLE"});
+            if (!state.first()) {
+                Statement statement = connection.createStatement();
+                statement.execute("create table car_state(" +
+                        "id varchar(20) primary key," +
+                        "car mediumText" +
+                        ")");
+                statement.close();
+            }
+            // 先尝试取状态表中的数
+            PreparedStatement carStatement = connection.prepareStatement("select car from car_state;");
+            ResultSet carSet = carStatement.executeQuery();
             cars = new ArrayList<>(carCount);
-            for (int i = 0; i < carCount && resultSet.next(); i++) {
+            int carCount = this.carCount;
+            ObjectMapper objectMapper = new ObjectMapper();
+            for (; carCount > 0 && carSet.next(); carCount--) {
+                String carJson = carSet.getString(1);
+                Car car = objectMapper.readValue(carJson, Car.class);
+                cars.add(car);
+            }
+            carSet.close();
+            carStatement.close();
+            // 再从维度表中添加汽车
+            resultSet = preparedStatement.executeQuery();
+            for (; carCount > 0 && resultSet.next(); carCount--) {
                 cars.add(Car.newInstance(resultSet.getString(1)));
             }
             resultSet.close();
             preparedStatement.close();
-
+            connection.commit();
         } catch (SQLException e) {
             System.err.println("维度数据的JDBC URL格式错误");
             throw new RuntimeException(e);
